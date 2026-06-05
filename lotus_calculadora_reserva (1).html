@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lótus — Calculadora de Reserva do Casamento</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lotus:#C9A96E; --lotus-light:#F0E6D3; --lotus-dark:#8B6E42;
+    --cream:#FAF7F2; --dark:#1C1A17; --mid:#5C5449; --soft:#E8E0D4; --white:#FFFFFF;
+    --green:#3B6D11; --green-bg:#EAF3DE; --amber-bg:#FAEEDA; --amber:#BA7517; --amber-text:#633806;
+    --red-bg:#FCEBEB; --red:#A32D2D;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--dark); min-height:100vh; }
+  body::before { content:''; position:fixed; top:-200px; right:-200px; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle,rgba(201,169,110,0.09) 0%,transparent 70%); pointer-events:none; }
+
+  .container { max-width:580px; margin:0 auto; padding:0 20px 60px; }
+
+  .header { text-align:center; padding:48px 0 32px; }
+  .logo { font-family:'Cormorant Garamond',serif; font-size:12px; letter-spacing:0.35em; text-transform:uppercase; color:var(--lotus); margin-bottom:16px; }
+  .header h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(26px,6vw,40px); font-weight:300; line-height:1.2; color:var(--dark); margin-bottom:10px; }
+  .header h1 em { font-style:italic; color:var(--lotus-dark); }
+  .header p { font-size:14px; font-weight:300; color:var(--mid); line-height:1.6; max-width:420px; margin:0 auto; }
+  .ornament { text-align:center; color:var(--lotus); letter-spacing:0.4em; font-size:13px; opacity:0.5; margin:22px 0 28px; }
+
+  /* Steps */
+  .steps-wrap { counter-reset:step; }
+  .step-card { background:var(--white); border:1px solid var(--soft); border-radius:16px; padding:22px 24px; margin-bottom:14px; position:relative; transition:border-color 0.2s; }
+  .step-card.active { border-color:var(--lotus); }
+  .step-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .step-num { width:30px; height:30px; border-radius:50%; background:var(--lotus-light); color:var(--lotus-dark); font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step-card.active .step-num { background:var(--lotus); color:white; }
+  .step-title { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:400; color:var(--dark); }
+  .step-hint { font-size:12px; font-weight:300; color:var(--mid); margin-bottom:10px; line-height:1.5; font-style:italic; }
+
+  /* Input */
+  .input-wrap { position:relative; }
+  .prefix { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--mid); pointer-events:none; font-weight:500; }
+  input[type="number"], input[type="date"] { width:100%; padding:13px 16px; border:1.5px solid var(--soft); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:16px; color:var(--dark); background:var(--white); outline:none; transition:border-color 0.2s; -webkit-appearance:none; appearance:none; }
+  input[type="number"] { padding-left:38px; }
+  input:focus { border-color:var(--lotus); }
+  input::placeholder { color:#C5BCB3; }
+
+  /* Pill feedback */
+  .pill { display:none; margin-top:10px; border-radius:8px; padding:10px 14px; font-size:13px; line-height:1.5; }
+  .pill.show { display:block; animation:fadeUp 0.3s ease both; }
+  .pill-gold { background:var(--lotus-light); color:var(--lotus-dark); }
+  .pill-green { background:var(--green-bg); color:var(--green); }
+  .pill-amber { background:var(--amber-bg); color:var(--amber-text); }
+  .pill-red { background:var(--red-bg); color:var(--red); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+
+  /* Slider */
+  .slider-row { display:flex; align-items:center; gap:14px; margin-top:12px; }
+  .slider-wrap { flex:1; }
+  input[type="range"] { width:100%; -webkit-appearance:none; height:4px; border-radius:4px; background:var(--soft); outline:none; cursor:pointer; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--lotus); cursor:pointer; border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+  .slider-val { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--lotus-dark); font-weight:500; min-width:80px; text-align:right; white-space:nowrap; }
+  .slider-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--mid); margin-top:4px; }
+  .or-divider { text-align:center; font-size:12px; color:var(--mid); margin:10px 0; letter-spacing:0.05em; }
+  .mensal-input-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:0; }
+  @media(max-width:420px){ .mensal-input-group{grid-template-columns:1fr;} }
+
+  /* Resultado */
+  .resultado { display:none; animation:fadeUp 0.5s ease both; margin-top:4px; }
+  .resultado.show { display:block; }
+
+  .res-hero { background:var(--lotus-light); border:2px solid var(--lotus); border-radius:16px; padding:28px 24px; margin-bottom:14px; }
+  .res-hero-top { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .res-hero-box { text-align:center; }
+  .res-hero-label { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--lotus-dark); opacity:0.8; margin-bottom:4px; }
+  .res-hero-val { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,40px); font-weight:400; color:var(--lotus-dark); line-height:1; }
+  .res-hero-sub { font-size:12px; color:var(--lotus-dark); opacity:0.7; margin-top:3px; }
+
+  .progress-section { margin-top:4px; }
+  .progress-label-row { display:flex; justify-content:space-between; font-size:12px; color:var(--mid); margin-bottom:6px; }
+  .progress-track { height:8px; background:rgba(201,169,110,0.2); border-radius:8px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--lotus); border-radius:8px; transition:width 0.7s ease; }
+
+  .res-rows-card { background:var(--white); border:1px solid var(--soft); border-radius:14px; padding:20px; margin-bottom:14px; }
+  .res-rows-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:400; color:var(--dark); margin-bottom:14px; }
+  .res-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--soft); font-size:13px; gap:10px; }
+  .res-row:last-child { border-bottom:none; }
+  .res-row .rl { color:var(--mid); }
+  .res-row .rv { font-weight:500; color:var(--dark); text-align:right; }
+  .res-row .rv.pos { color:var(--green); }
+  .res-row .rv.neg { color:var(--red); }
+  .res-row .rv.warn { color:var(--amber-text); }
+
+  /* Timeline */
+  .timeline { background:var(--white); border:1px solid var(--soft); border-radius:14px; padding:20px; margin-bottom:14px; }
+  .timeline h4 { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:400; margin-bottom:16px; color:var(--dark); }
+  .tl-item { display:flex; gap:14px; align-items:flex-start; margin-bottom:14px; position:relative; }
+  .tl-item:not(:last-child)::before { content:''; position:absolute; left:15px; top:32px; width:1px; height:calc(100% + 2px); background:var(--soft); }
+  .tl-dot { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; z-index:1; }
+  .tl-dot.hoje { background:var(--lotus); }
+  .tl-dot.meio { background:var(--amber-bg); border:2px solid var(--amber); }
+  .tl-dot.final { background:var(--green-bg); border:2px solid var(--green); }
+  .tl-dot.casa { background:#E6F1FB; border:2px solid #378ADD; }
+  .tl-body { flex:1; }
+  .tl-data { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.05em; color:var(--mid); margin-bottom:2px; }
+  .tl-titulo { font-size:14px; font-weight:500; color:var(--dark); }
+  .tl-desc { font-size:12px; color:var(--mid); margin-top:3px; line-height:1.4; }
+  .tl-valor { font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--lotus-dark); font-weight:500; margin-top:2px; }
+
+  /* Alerta e dicas */
+  .alert-box { border-radius:0 10px 10px 0; padding:12px 16px; font-size:13px; margin-bottom:14px; line-height:1.55; }
+  .alert-ok { background:var(--green-bg); border-left:3px solid var(--green); color:#27500A; }
+  .alert-warn { background:var(--amber-bg); border-left:3px solid var(--amber); color:var(--amber-text); }
+  .alert-red { background:var(--red-bg); border-left:3px solid var(--red); color:var(--red); }
+  .alert-info { background:#E6F1FB; border-left:3px solid #378ADD; color:#0C447C; }
+
+  .dicas-card { background:var(--white); border:1px solid var(--soft); border-radius:14px; padding:20px; margin-bottom:14px; }
+  .dicas-card h4 { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:400; margin-bottom:14px; color:var(--dark); }
+  .dica { display:flex; gap:10px; align-items:flex-start; font-size:13px; margin-bottom:10px; line-height:1.55; color:var(--dark); }
+  .dica-dot { width:6px; height:6px; border-radius:50%; background:var(--lotus); flex-shrink:0; margin-top:6px; }
+
+  /* CTA */
+  .cta { background:var(--dark); border-radius:14px; padding:26px 22px; text-align:center; }
+  .cta p { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:300; color:var(--cream); margin-bottom:16px; line-height:1.4; }
+  .cta-btn { display:inline-block; padding:13px 28px; background:var(--lotus); color:white; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; transition:background 0.2s; }
+  .cta-btn:hover { background:var(--lotus-dark); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">✦ Lótus Recepções ✦</div>
+    <h1>Quanto guardar por mês<br>para o <em>casamento dos sonhos?</em></h1>
+    <p>Preencha os campos abaixo e veja em tempo real sua projeção de reserva até o grande dia.</p>
+  </div>
+  <div class="ornament">✦ ✦ ✦</div>
+
+  <div class="steps-wrap">
+
+    <!-- PASSO 1: Data -->
+    <div class="step-card active" id="card1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Quando é o casamento?</div>
+      </div>
+      <p class="step-hint">Se ainda não tem data definida, coloque uma estimativa — você pode ajustar depois.</p>
+      <input type="date" id="data" oninput="calcular()" />
+      <div class="pill pill-gold" id="pill-data"></div>
+    </div>
+
+    <!-- PASSO 2: Orçamento -->
+    <div class="step-card" id="card2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Qual o orçamento total do casamento?</div>
+      </div>
+      <p class="step-hint">Inclua tudo: espaço, buffet, foto/vídeo, música, decoração, trajes, convites, lua de mel... Some os fornecedores que já fechou e os que pretende fechar.</p>
+      <div class="input-wrap">
+        <span class="prefix">R$</span>
+        <input type="number" id="orcamento" placeholder="25000" oninput="calcular()" onfocus="if(this.value==='0')this.value=''" min="0" />
+      </div>
+      <div class="pill" id="pill-orc"></div>
+    </div>
+
+    <!-- PASSO 3: Entrada já paga -->
+    <div class="step-card" id="card3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Já deu entradas ou pagamentos parciais?</div>
+      </div>
+      <p class="step-hint">Na prática, cada fornecedor cobrar ~10% de entrada para garantir a data. Some tudo que já saiu do bolso para o casamento.</p>
+      <div class="input-wrap">
+        <span class="prefix">R$</span>
+        <input type="number" id="entradas" placeholder="0" oninput="calcular()" onfocus="if(this.value==='0')this.value=''" min="0" value="0" />
+      </div>
+      <div class="pill" id="pill-entrada"></div>
+    </div>
+
+    <!-- PASSO 4: Reserva atual -->
+    <div class="step-card" id="card4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Quanto já têm guardado na caixinha do casamento?</div>
+      </div>
+      <p class="step-hint">Só o que está separado para o casamento — não confunda com reserva de emergência ou outros investimentos.</p>
+      <div class="input-wrap">
+        <span class="prefix">R$</span>
+        <input type="number" id="guardado" placeholder="0" oninput="calcular()" onfocus="if(this.value==='0')this.value=''" min="0" value="0" />
+      </div>
+      <div class="pill" id="pill-guardado"></div>
+    </div>
+
+    <!-- PASSO 5: Quanto pode guardar por mês -->
+    <div class="step-card" id="card5">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">Quanto o casal consegue guardar por mês para o casamento?</div>
+      </div>
+      <p class="step-hint">Puxe o controle ou digite o valor. Seja honesto — é melhor trabalhar com o que é real do que com o que seria ideal.</p>
+
+      <div class="slider-row">
+        <div class="slider-wrap">
+          <input type="range" id="slider-mensal" min="0" max="5000" step="50" value="500" oninput="syncSlider()" />
+          <div class="slider-labels"><span>R$0</span><span>R$5.000</span></div>
+        </div>
+        <div class="slider-val" id="slider-display">R$500</div>
+      </div>
+
+      <div class="or-divider">— ou digite o valor exato —</div>
+
+      <div class="input-wrap">
+        <span class="prefix">R$</span>
+        <input type="number" id="mensal" placeholder="500" oninput="syncInput()" onfocus="if(this.value==='0'||this.value==='500')this.value=''" min="0" value="500" />
+      </div>
+      <div class="pill" id="pill-mensal"></div>
+    </div>
+
+  </div><!-- fim steps -->
+
+  <!-- RESULTADO -->
+  <div class="resultado" id="resultado">
+
+    <!-- Hero com os dois números principais -->
+    <div class="res-hero">
+      <div class="res-hero-top">
+        <div class="res-hero-box">
+          <div class="res-hero-label">você precisaria guardar</div>
+          <div class="res-hero-val" id="res-necessario">—</div>
+          <div class="res-hero-sub">por mês para cobrir tudo</div>
+        </div>
+        <div class="res-hero-box">
+          <div class="res-hero-label">com o seu ritmo atual</div>
+          <div class="res-hero-val" id="res-acumulado">—</div>
+          <div class="res-hero-sub">acumulado até o casamento</div>
+        </div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label-row">
+          <span>Reserva vs. saldo final a quitar</span>
+          <span id="res-pct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Aviso: reserva ≠ valor total -->
+    <div style="background:var(--white);border:1px solid var(--soft);border-radius:14px;padding:18px 20px;margin-bottom:14px;display:flex;gap:14px;align-items:flex-start;">
+      <span style="font-size:22px;flex-shrink:0;">🙏</span>
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:var(--dark);margin-bottom:6px;">Lembre-se: isso é uma reserva, não o valor total</div>
+        <div style="font-size:13px;color:var(--mid);line-height:1.6;">Esse cálculo mostra o que <strong>você mesmo</strong> consegue guardar. Mas na prática, muitos casais contam com bênçãos de familiares e amigos próximos — e esse apoio frequentemente abate uma parte significativa do orçamento final. Não ter o valor completo na reserva não significa que o casamento não vai acontecer. Significa que você está construindo a sua parte com responsabilidade.</div>
+      </div>
+    </div>
+
+    <!-- Detalhamento -->
+    <div class="res-rows-card">
+      <div class="res-rows-title">📋 Detalhamento do seu plano</div>
+      <div class="res-row"><span class="rl">Orçamento total</span><span class="rv" id="d-orc">—</span></div>
+      <div class="res-row"><span class="rl">Entradas já pagas</span><span class="rv pos" id="d-entrada">—</span></div>
+      <div class="res-row"><span class="rl">Já guardado na caixinha</span><span class="rv pos" id="d-guardado">—</span></div>
+      <div class="res-row"><span class="rl">Saldo final a quitar (90%)</span><span class="rv" id="d-saldo">—</span></div>
+      <div class="res-row"><span class="rl">Meses disponíveis</span><span class="rv" id="d-meses">—</span></div>
+      <div class="res-row"><span class="rl">Guardando por mês</span><span class="rv" id="d-mensal">—</span></div>
+      <div class="res-row"><span class="rl">Total acumulado até o casamento</span><span class="rv" id="d-total">—</span></div>
+      <div class="res-row"><span class="rl" style="font-weight:500;">Situação final</span><span class="rv" id="d-situacao">—</span></div>
+    </div>
+
+    <!-- Alerta -->
+    <div id="alerta"></div>
+
+    <!-- Timeline de marcos -->
+    <div class="timeline">
+      <h4>🗓️ Linha do tempo da sua reserva</h4>
+      <div id="timeline-itens"></div>
+    </div>
+
+    <!-- Dicas -->
+    <div class="dicas-card">
+      <h4>💡 Dicas para o seu perfil</h4>
+      <div id="dicas"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="cta" id="feedback-block">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--cream);margin-bottom:6px;line-height:1.3;">O que você achou?</div>
+      <div style="font-size:13px;color:rgba(250,247,242,0.65);margin-bottom:20px;line-height:1.5;">Conta pra gente se a calculadora ajudou no seu planejamento — sua opinião é muito importante para nós.</div>
+
+      <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;" id="emoji-btns">
+        <button onclick="selecionarEmoji(this,'😍')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 16px;font-size:22px;cursor:pointer;transition:all 0.2s;color:white;" title="Amei!">😍</button>
+        <button onclick="selecionarEmoji(this,'😊')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 16px;font-size:22px;cursor:pointer;transition:all 0.2s;color:white;" title="Gostei">😊</button>
+        <button onclick="selecionarEmoji(this,'😐')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 16px;font-size:22px;cursor:pointer;transition:all 0.2s;color:white;" title="Mais ou menos">😐</button>
+        <button onclick="selecionarEmoji(this,'🤔')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 16px;font-size:22px;cursor:pointer;transition:all 0.2s;color:white;" title="Fiquei com dúvidas">🤔</button>
+      </div>
+
+      <div id="feedback-campos" style="display:none;animation:fadeUp 0.3s ease both;">
+        <input id="feedback-nome" type="text" placeholder="Seu nome (opcional)" style="width:100%;padding:13px 16px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:rgba(255,255,255,0.95);outline:none;margin-bottom:10px;" />
+        <textarea id="feedback-txt" placeholder="Conte o que achou, o que podemos melhorar ou como a calculadora ajudou você..." style="width:100%;padding:13px 16px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:rgba(255,255,255,0.95);outline:none;resize:vertical;min-height:90px;margin-bottom:12px;"></textarea>
+        <button onclick="enviarFeedback()" style="width:100%;padding:14px;background:var(--lotus);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;">Enviar feedback →</button>
+      </div>
+
+      <div id="feedback-ok" style="display:none;animation:fadeUp 0.3s ease both;font-size:14px;color:rgba(250,247,242,0.85);line-height:1.5;">
+        ✨ Obrigada pelo feedback! Ele vai nos ajudar a melhorar cada vez mais essa ferramenta para os próximos casais.
+      </div>
+    </div>
+
+  </div><!-- fim resultado -->
+
+</div>
+<script>
+  function fmt(v){ return 'R$'+Math.round(v).toLocaleString('pt-BR'); }
+  function fmtMes(m){ return m+'m'; }
+
+  function syncSlider(){
+    const v = parseInt(document.getElementById('slider-mensal').value)||0;
+    document.getElementById('mensal').value = v;
+    document.getElementById('slider-display').textContent = fmt(v);
+    calcular();
+  }
+  function syncInput(){
+    const v = parseInt(document.getElementById('mensal').value)||0;
+    const clamped = Math.min(v,5000);
+    document.getElementById('slider-mensal').value = clamped;
+    document.getElementById('slider-display').textContent = fmt(v);
+    calcular();
+  }
+
+  function setPill(id, cls, html){
+    const el = document.getElementById(id);
+    el.className = 'pill '+cls+' show';
+    el.innerHTML = html;
+  }
+  function hidePill(id){ document.getElementById(id).className='pill'; }
+
+  function calcular(){
+    const dataVal = document.getElementById('data').value;
+    const orc = parseFloat(document.getElementById('orcamento').value)||0;
+    const entradas = parseFloat(document.getElementById('entradas').value)||0;
+    const guardado = parseFloat(document.getElementById('guardado').value)||0;
+    const mensal = parseFloat(document.getElementById('mensal').value)||0;
+
+    // Ativa cards
+    document.getElementById('card1').classList.toggle('active', !!dataVal);
+    document.getElementById('card2').classList.toggle('active', orc>0);
+    document.getElementById('card3').classList.toggle('active', true);
+    document.getElementById('card4').classList.toggle('active', true);
+    document.getElementById('card5').classList.toggle('active', mensal>0);
+
+    // Pill data
+    if(dataVal){
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const data = new Date(dataVal+'T00:00:00');
+      const dias = Math.ceil((data-hoje)/86400000);
+      if(dias<=0){ setPill('pill-data','pill-red','⚠️ Essa data já passou. Escolha uma data futura.'); document.getElementById('resultado').classList.remove('show'); return; }
+      const meses = Math.ceil(dias/30.44);
+      const dataBR = data.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+      setPill('pill-data','pill-gold',`✨ Faltam <strong>${dias.toLocaleString('pt-BR')} dias</strong> — ${meses} meses até <strong>${dataBR}</strong>`);
+    } else { hidePill('pill-data'); }
+
+    // Pill orçamento
+    if(orc>0){
+      const entrada10 = orc*0.10;
+      setPill('pill-orc','pill-gold',`💡 Preveja ~<strong>${fmt(entrada10)}</strong> em entradas (10%) para garantir cada fornecedor.`);
+    } else hidePill('pill-orc');
+
+    // Pill entradas
+    if(entradas>0 && orc>0){
+      const pct = Math.round((entradas/orc)*100);
+      setPill('pill-entrada','pill-green',`✅ <strong>${fmt(entradas)}</strong> já saiu (${pct}% do orçamento). Bom começo!`);
+    } else hidePill('pill-entrada');
+
+    // Pill guardado
+    if(guardado>0){
+      setPill('pill-guardado','pill-green',`🏦 <strong>${fmt(guardado)}</strong> já reservados. Cada real conta!`);
+    } else hidePill('pill-guardado');
+
+    // Sem data ou orçamento → esconde resultado
+    if(!dataVal || orc<=0){ document.getElementById('resultado').classList.remove('show'); return; }
+
+    const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
+    const data2 = new Date(dataVal+'T00:00:00');
+    const dias2 = Math.ceil((data2-hoje2)/86400000);
+    if(dias2<=0){ document.getElementById('resultado').classList.remove('show'); return; }
+    const meses = Math.ceil(dias2/30.44);
+
+    // Cálculos principais
+    // Saldo final = orçamento - entradas já pagas - guardado atual - acumulado mensal
+    const acumuladoFinal = guardado + mensal * meses;
+    const saldoFinal = Math.max(0, orc - entradas - acumuladoFinal); // o que ainda vai faltar no dia
+    const totalCobertoFinal = entradas + acumuladoFinal;
+    const mensalNecessario = meses > 0 ? Math.ceil(Math.max(0, orc - entradas - guardado) / meses) : 0;
+    const percentual = orc > 0 ? Math.min(100, Math.round((Math.min(totalCobertoFinal,orc)/orc)*100)) : 0;
+    const viavel = totalCobertoFinal >= orc;
+    const sobra = viavel ? totalCobertoFinal - orc : 0;
+
+    // Pill mensal
+    if(mensal>0){
+      if(mensal>=mensalNecessario) setPill('pill-mensal','pill-green',`✅ Esse ritmo é suficiente para cobrir o orçamento!`);
+      else { const diff=mensalNecessario-mensal; setPill('pill-mensal','pill-amber',`📈 Para cobrir tudo, precisaria de mais <strong>${fmt(diff)}/mês</strong> (total: ${fmt(mensalNecessario)}/mês).`); }
+    } else hidePill('pill-mensal');
+
+    // Preenche hero
+    document.getElementById('res-necessario').textContent = fmt(mensalNecessario);
+    document.getElementById('res-acumulado').textContent = fmt(acumuladoFinal);
+    document.getElementById('res-pct').textContent = percentual+'%';
+    document.getElementById('progress-fill').style.width = percentual+'%';
+
+    // Detalhamento
+    document.getElementById('d-orc').textContent = fmt(orc);
+    document.getElementById('d-entrada').textContent = fmt(entradas) + (entradas>0?' ✓':'');
+    document.getElementById('d-guardado').textContent = fmt(guardado) + (guardado>0?' ✓':'');
+    document.getElementById('d-saldo').textContent = fmt(Math.max(0, orc-entradas-guardado));
+    document.getElementById('d-meses').textContent = meses+' meses';
+    document.getElementById('d-mensal').textContent = fmt(mensal)+'/mês';
+    document.getElementById('d-total').textContent = fmt(acumuladoFinal);
+    const sitEl = document.getElementById('d-situacao');
+    if(viavel){ sitEl.textContent = '✅ Reserva cobre o orçamento'; sitEl.className='rv pos'; }
+    else { sitEl.textContent = `⚠️ Faltam ${fmt(saldoFinal)} no dia`; sitEl.className='rv warn'; }
+
+    // Alerta
+    let alertHTML = '';
+    if(viavel && sobra>0){
+      alertHTML = `<div class="alert-box alert-ok">🎉 Parabéns! Com esse ritmo, vocês chegam ao casamento com <strong>${fmt(sobra)}</strong> de sobra — margem para imprevistos ou um upgrade no pacote.</div>`;
+    } else if(!viavel && saldoFinal < orc*0.2){
+      alertHTML = `<div class="alert-box alert-warn">⚠️ Vocês cobrem ${percentual}% do orçamento. Faltam <strong>${fmt(saldoFinal)}</strong> para quitar no dia. Que tal aumentar <strong>${fmt(mensalNecessario-mensal)}/mês</strong>? Ou conversar com a Lótus sobre o parcelamento?</div>`;
+    } else if(!viavel){
+      alertHTML = `<div class="alert-box alert-red">🚨 Com esse ritmo, o orçamento não fecha. Faltariam <strong>${fmt(saldoFinal)}</strong> para quitar no dia do casamento. Duas saídas: aumentar a reserva mensal para <strong>${fmt(mensalNecessario)}/mês</strong>, ou ajustar o orçamento para <strong>${fmt(entradas+acumuladoFinal)}</strong>.</div>`;
+    }
+    document.getElementById('alerta').innerHTML = alertHTML;
+
+    // Timeline
+    const hoje3 = new Date(); hoje3.setHours(0,0,0,0);
+    const meioData = new Date(hoje3.getTime() + (data2.getTime()-hoje3.getTime())/2);
+    const meio6m = new Date(hoje3); meio6m.setMonth(meio6m.getMonth()+6);
+    const mesAntes = new Date(data2); mesAntes.setMonth(mesAntes.getMonth()-1);
+    const meses6 = Math.min(6, meses);
+    const poupado6m = guardado + mensal*meses6;
+    const poupado50pct = guardado + mensal*Math.ceil(meses/2);
+    const poupado1mAntes = guardado + mensal*(meses-1);
+    const dataBR2 = data2.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    const meio6BR = meio6m.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const mesAntesBR = mesAntes.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+
+    document.getElementById('timeline-itens').innerHTML = `
+      <div class="tl-item">
+        <div class="tl-dot hoje">🌱</div>
+        <div class="tl-body">
+          <div class="tl-data">Hoje</div>
+          <div class="tl-titulo">Início da reserva</div>
+          <div class="tl-desc">Caixinha atual + começo do plano mensal</div>
+          <div class="tl-valor">${fmt(guardado)} guardados</div>
+        </div>
+      </div>
+      ${meses>6?`<div class="tl-item">
+        <div class="tl-dot meio">📈</div>
+        <div class="tl-body">
+          <div class="tl-data">${meio6BR}</div>
+          <div class="tl-titulo">6 meses de reserva</div>
+          <div class="tl-desc">Bom momento para revisar o plano e ajustar o ritmo</div>
+          <div class="tl-valor">${fmt(poupado6m)} acumulados</div>
+        </div>
+      </div>`:''}
+      ${meses>3?`<div class="tl-item">
+        <div class="tl-dot casa">🤝</div>
+        <div class="tl-body">
+          <div class="tl-data">Metade do caminho</div>
+          <div class="tl-titulo">Fechamento de fornecedores</div>
+          <div class="tl-desc">Boa fase para fechar buffet, foto/vídeo e decoração — ainda há tempo para negociar</div>
+          <div class="tl-valor">${fmt(poupado50pct)} na caixinha</div>
+        </div>
+      </div>`:''}
+      <div class="tl-item">
+        <div class="tl-dot meio">💳</div>
+        <div class="tl-body">
+          <div class="tl-data">${mesAntesBR}</div>
+          <div class="tl-titulo">1 mês antes — preparar quitação</div>
+          <div class="tl-desc">A maioria dos fornecedores cobra o saldo final 15 dias antes. Organize os pagamentos.</div>
+          <div class="tl-valor">${fmt(poupado1mAntes)} acumulados</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot final">💍</div>
+        <div class="tl-body">
+          <div class="tl-data">${dataBR2}</div>
+          <div class="tl-titulo">O grande dia!</div>
+          <div class="tl-desc">${viavel?'Orçamento coberto — aproveite cada momento!':'Reserve energia para curtir o dia, não para se preocupar com finanças.'}</div>
+          <div class="tl-valor">${fmt(acumuladoFinal)} acumulados</div>
+        </div>
+      </div>
+    `;
+
+    // Dicas dinâmicas
+    const dicas = [];
+    if(mensal<mensalNecessario) dicas.push(`Você precisa de <strong>${fmt(mensalNecessario-mensal)}/mês a mais</strong> para fechar o orçamento. Pequenos cortes no cotidiano somam muito em ${meses} meses.`);
+    if(guardado===0) dicas.push('Abra uma conta separada exclusiva para o casamento ainda essa semana — misturar com o cotidiano é a maior causa de não conseguir guardar.');
+    if(mensal>0) dicas.push(`Configure uma transferência automática de <strong>${fmt(mensal)}</strong> para o dia 1º de cada mês — antes de pagar qualquer outra coisa.`);
+    if(meses>=12) dicas.push('Com esse prazo, coloque a reserva em um <strong>CDB de liquidez diária</strong> — rende mais que poupança e você resgata quando precisar.');
+    if(meses<6) dicas.push('Prazo curto! Priorize guardar o máximo possível agora e evite parcelar entradas no cartão — juros comem a reserva.');
+    dicas.push('Sempre inclua <strong>5–10% do orçamento como reserva para imprevistos</strong> — algum custo surpresa sempre aparece no último mês.');
+    if(entradas===0 && orc>0) dicas.push(`Cada fornecedor que você fechar vai pedir ~10% de entrada (<strong>${fmt(orc*0.1)}</strong> no total). Inclua isso no seu planejamento de fluxo.`);
+
+    document.getElementById('dicas').innerHTML = dicas.map(d=>`<div class="dica"><div class="dica-dot"></div><span>${d}</span></div>`).join('');
+
+    document.getElementById('resultado').classList.add('show');
+  }
+
+  let emojiSelecionado = '';
+  function selecionarEmoji(btn, emoji){
+    document.querySelectorAll('#emoji-btns button').forEach(b=>{
+      b.style.background='rgba(255,255,255,0.08)';
+      b.style.borderColor='rgba(255,255,255,0.15)';
+      b.style.transform='scale(1)';
+    });
+    btn.style.background='rgba(201,169,110,0.35)';
+    btn.style.borderColor='var(--lotus)';
+    btn.style.transform='scale(1.12)';
+    emojiSelecionado = emoji;
+    document.getElementById('feedback-campos').style.display='block';
+  }
+
+  async function enviarFeedback(){
+    const txt = document.getElementById('feedback-txt').value.trim();
+    const btnEnviar = document.querySelector('#feedback-campos button');
+    btnEnviar.textContent = 'Enviando...';
+    btnEnviar.disabled = true;
+
+    try {
+      const resp = await fetch('https://formspree.io/f/meewobby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          nome: document.getElementById('feedback-nome').value.trim() || 'Anônimo',
+          avaliacao: emojiSelecionado,
+          comentario: txt || '(sem comentário)',
+          _subject: 'Feedback — Calculadora Lótus'
+        })
+      });
+      if(resp.ok){
+        document.getElementById('feedback-campos').style.display='none';
+        document.getElementById('emoji-btns').style.display='none';
+        document.getElementById('feedback-ok').style.display='block';
+      } else {
+        btnEnviar.textContent = 'Erro — tente novamente';
+        btnEnviar.disabled = false;
+      }
+    } catch(e){
+      btnEnviar.textContent = 'Erro — tente novamente';
+      btnEnviar.disabled = false;
+    }
+  }
+
+  function abrirWhatsApp(){
+    const orc = parseFloat(document.getElementById('orcamento').value)||0;
+    const mensal = parseFloat(document.getElementById('mensal').value)||0;
+    const guardado = parseFloat(document.getElementById('guardado').value)||0;
+    const dataVal = document.getElementById('data').value;
+    const dataBR = dataVal ? new Date(dataVal+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : 'não informada';
+    const msg =
+      `Olá, Lótus! 💍 Usei a calculadora de reserva e gostaria de conversar.\n\n`+
+      `📅 Data: ${dataBR}\n`+
+      `💰 Orçamento: ${fmt(orc)}\n`+
+      `🏦 Guardado: ${fmt(guardado)}\n`+
+      `📈 Guardando: ${fmt(mensal)}/mês\n\n`+
+      `Pode me ajudar com o planejamento?`;
+    window.open('https://wa.me/5584991060029?text='+encodeURIComponent(msg),'_blank');
+  }
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('data').min = new Date().toISOString().split('T')[0];
+    calcular();
+  });
+</script>
+</body>
+</html>
